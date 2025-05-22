@@ -1,9 +1,9 @@
 import * as cdk from "aws-cdk-lib";
 import { Construct } from "constructs";
 import * as cognito from "aws-cdk-lib/aws-cognito";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as iam from "aws-cdk-lib/aws-iam";
 
-// import * as sqs from 'aws-cdk-lib/aws-sqs';
 
 export class BookTrackerCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -85,6 +85,65 @@ export class BookTrackerCdkStack extends cdk.Stack {
         roles: {
           authenticated: authenticatedRole.roleArn,
         },
+      },
+    );
+
+    // DynamoDB Tables
+    // Books Table
+    const booksTable = new dynamodb.Table(this, "BooksTable", {
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
+    });
+
+    // Tags Table
+    const tagsTable = new dynamodb.Table(this, "TagsTable", {
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
+    });
+
+    // BookTags Table (for many-to-many relationship)
+    const bookTagsTable = new dynamodb.Table(this, "BookTagsTable", {
+      partitionKey: {
+        name: "bookId_tagId",
+        type: dynamodb.AttributeType.STRING,
+      },
+      sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
+    });
+
+    // Progress Table
+    const progressTable = new dynamodb.Table(this, "ProgressTable", {
+      partitionKey: { name: "bookId", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
+    });
+
+    // Collections Table
+    const collectionsTable = new dynamodb.Table(this, "CollectionsTable", {
+      partitionKey: { name: "id", type: dynamodb.AttributeType.STRING },
+      sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
+    });
+
+    // CollectionBooks Table (for many-to-many relationship)
+    const collectionBooksTable = new dynamodb.Table(
+      this,
+      "CollectionBooksTable",
+      {
+        partitionKey: {
+          name: "collectionId_bookId",
+          type: dynamodb.AttributeType.STRING,
+        },
+        sortKey: { name: "userId", type: dynamodb.AttributeType.STRING },
+        billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+        removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
       },
     );
   }
