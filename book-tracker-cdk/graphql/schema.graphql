@@ -1,0 +1,117 @@
+type Book {
+  id: ID!
+  userId: String!
+  title: String!
+  author: String!
+  status: BookStatus!
+  createdAt: String!
+  updatedAt: String!
+}
+
+type Tag {
+  id: ID!
+  userId: String!
+  name: String!
+}
+
+type BookTag {
+  bookId: ID!
+  tagId: ID!
+  userId: String!
+}
+
+type ReadingProgress {
+  bookId: ID!
+  userId: String!
+  pageNumber: Int!
+  totalPages: Int!
+  updatedAt: String!
+}
+
+type Collection {
+  id: ID!
+  userId: String!
+  name: String!
+}
+
+type CollectionBook {
+  collectionId: ID!
+  bookId: ID!
+  userId: String!
+}
+
+type WeeklyReadStats {
+  userId: String!
+  totalPagesRead: Int!
+  totalBooksCompleted: Int!
+  dailyProgress: [DailyProgress!]!
+}
+
+type DailyProgress {
+  date: String!
+  pagesRead: Int!
+}
+
+enum BookStatus {
+  TO_READ
+  IN_PROGRESS
+  COMPLETED
+}
+
+input BookInput {
+  title: String!
+  author: String!
+  status: BookStatus!
+}
+
+input BookUpdateInput {
+  title: String
+  author: String
+  status: BookStatus
+}
+
+input ProgressInput {
+  pageNumber: Int!
+  totalPages: Int!
+}
+
+type Query {
+  # Book CRUD
+  getBook(id: ID!): Book
+  listBooks(status: BookStatus): [Book!]!
+  
+  # Tag Management
+  listBooksByTag(tagId: ID!): [Book!]!
+  
+  # Reading Progress
+  getProgress(bookId: ID!): ReadingProgress
+  getWeeklyReadStats(userId: String!): WeeklyReadStats
+  
+  # Collections
+  listCollections(userId: String!): [Collection!]!
+}
+
+type Mutation {
+  # Book CRUD
+  createBook(input: BookInput!): Book!
+  updateBook(id: ID!, input: BookUpdateInput!): Book!
+  deleteBook(id: ID!): Boolean!
+  
+  # Tag Management
+  createTag(name: String!): Tag!
+  tagBook(bookId: ID!, tagId: ID!): BookTag!
+  untagBook(bookId: ID!, tagId: ID!): Boolean!
+  
+  # Reading Progress
+  updateProgress(bookId: ID!, input: ProgressInput!): ReadingProgress!
+  
+  # Collections
+  createCollection(name: String!): Collection!
+  addBookToCollection(collectionId: ID!, bookId: ID!): CollectionBook!
+  removeBookFromCollection(collectionId: ID!, bookId: ID!): Boolean!
+}
+
+schema {
+  query: Query
+  mutation: Mutation
+}

@@ -3,6 +3,7 @@ import { Construct } from "constructs";
 import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as iam from "aws-cdk-lib/aws-iam";
+import * as appsync from 'aws-cdk-lib/aws-appsync';
 
 
 export class BookTrackerCdkStack extends cdk.Stack {
@@ -146,5 +147,30 @@ export class BookTrackerCdkStack extends cdk.Stack {
         removalPolicy: cdk.RemovalPolicy.DESTROY, // For demo purposes only
       },
     );
+
+    // AppSync GraphQL API
+    const api = new appsync.GraphqlApi(this, 'BookTrackerAPI', {
+      name: 'BookTrackerAPI',
+      definition: appsync.Definition.fromFile(
+        'graphql/schema.graphql',
+      ),
+      authorizationConfig: {
+        defaultAuthorization: {
+          authorizationType: appsync.AuthorizationType.USER_POOL,
+          userPoolConfig: {
+            userPool,
+          },
+        },
+        additionalAuthorizationModes: [
+          {
+            authorizationType: appsync.AuthorizationType.IAM,
+          },
+        ],
+      },
+      logConfig: {
+        fieldLogLevel: appsync.FieldLogLevel.ALL,
+      },
+      xrayEnabled: true,
+    });
   }
 }
