@@ -1,10 +1,10 @@
 #!/usr/bin/env node
 import "source-map-support/register";
 import * as cdk from "aws-cdk-lib";
-import { BookTrackerCdkStack } from "../lib/book-tracker-api-stack";
+import { BookTrackerCdkStack } from "../lib/book-tracker-cdk-stack";
 
 const app = new cdk.App();
-new BookTrackerCdkStack(app, "BookTrackerApiStack", {
+new BookTrackerCdkStack(app, "BookTrackerCdkStack", {
   /* If you don't specify 'env', this stack will be environment-agnostic.
    * Account/Region-dependent features and context lookups will not work,
    * but a single synthesized template can be deployed anywhere. */
