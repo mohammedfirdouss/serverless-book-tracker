@@ -4,6 +4,7 @@ import * as cognito from "aws-cdk-lib/aws-cognito";
 import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 import * as iam from "aws-cdk-lib/aws-iam";
 import * as appsync from 'aws-cdk-lib/aws-appsync';
+import * as lambda from 'aws-cdk-lib/aws-lambda';
 
 
 export class BookTrackerCdkStack extends cdk.Stack {
@@ -172,5 +173,77 @@ export class BookTrackerCdkStack extends cdk.Stack {
       },
       xrayEnabled: true,
     });
+
+    // Shared Lambda Configuration
+    // This configuration is shared across multiple Lambda functions to ensure consistency and reduce redundancy.
+    const sharedLambdaConfig = {
+      runtime: lambda.Runtime.NODEJS_18_X, // Using Node.js 18.x runtime for modern JavaScript/TypeScript support.
+      handler: 'index.handler', // Entry point for the Lambda function.
+      memorySize: 256, // Allocating 256 MB of memory to balance cost and performance for typical workloads.
+      timeout: cdk.Duration.seconds(30), // Setting a 30-second timeout to handle longer-running operations without exceeding limits.
+    };
+
+    // Lambda Functions for Resolvers
+    // Book CRUD Lambda
+    const bookCrudLambda = new lambda.Function(this, 'BookCrudLambda', {
+      ...sharedLambdaConfig,
+      code: lambda.Code.fromAsset('lambda/book-crud'),
+      environment: {
+        BOOKS_TABLE: booksTable.tableName,
+      },
+    });
+
+    // Tag Management Lambda
+    const tagManagementLambda = new lambda.Function(this, 'TagManagementLambda', {
+      ...sharedLambdaConfig,
+      code: lambda.Code.fromAsset('lambda/tag-management'),
+      environment: {
+        TAGS_TABLE: tagsTable.tableName,
+        BOOK_TAGS_TABLE: bookTagsTable.tableName,
+      },
+    });
+
+    // Reading Progress Lambda
+    const readingProgressLambda = new lambda.Function(this, 'ReadingProgressLambda', {
+      ...sharedLambdaConfig,
+      code: lambda.Code.fromAsset('lambda/reading-progress'),
+      environment: {
+        PROGRESS_TABLE: progressTable.tableName,
+      },
+    });
+
+    // Collections Lambda
+    const collectionsLambda = new lambda.Function(this, 'CollectionsLambda', {
+      ...sharedLambdaConfig,
+      code: lambda.Code.fromAsset('lambda/collections'),
+      environment: {
+        COLLECTIONS_TABLE: collectionsTable.tableName,
+        COLLECTION_BOOKS_TABLE: collectionBooksTable.tableName,
+      },
+    });
+
+    // Analytics Lambda
+    const analyticsLambda = new lambda.Function(this, 'AnalyticsLambda', {
+      ...sharedLambdaConfig,
+      code: lambda.Code.fromAsset('lambda/analytics'),
+      environment: {
+        PROGRESS_TABLE: progressTable.tableName,
+      },
+    });
+
+    booksTable.grantReadWriteData(bookCrudLambda); // Book CRUD requires full access to BooksTable
+    tagsTable.grantReadWriteData(tagManagementLambda); // Tag Management requires full access to TagsTable
+    bookTagsTable.grantReadWriteData(tagManagementLambda); // Tag Management requires full access to BookTagsTable
+    progressTable.grantReadWriteData(readingProgressLambda); // Reading Progress requires full access to ProgressTable
+    collectionsTable.grantReadWriteData(collectionsLambda); // Collections require full access to CollectionsTable
+    collectionBooksTable.grantReadWriteData(collectionsLambda); // Collections require full access to CollectionBooksTable
+    progressTable.grantReadData(analyticsLambda); // Analytics only requires read access to ProgressTable
+
+    // AppSync Data Sources
+    const bookCrudDS = api.addLambdaDataSource('BookCrudDataSource', bookCrudLambda);
+    const tagManagementDS = api.addLambdaDataSource('TagManagementDataSource', tagManagementLambda);
+    const readingProgressDS = api.addLambdaDataSource('ReadingProgressDataSource', readingProgressLambda);
+    const collectionsDS = api.addLambdaDataSource('CollectionsDataSource', collectionsLambda);
+    const analyticsDS = api.addLambdaDataSource('AnalyticsDataSource', analyticsLambda);
   }
 }
